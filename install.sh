@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-#   Pterodactyl Panel Theme - Installer v2.0.0
+#   Pterodactyl Panel Theme - Installer v2.0.1
 #   GitHub: https://github.com/yuvrajnathawat/pterodyctalpaneltheme
 # ============================================================
 
@@ -24,7 +24,7 @@ print_banner() {
     echo "  ██║░░██║██║░░██║██║██╔╝╚██╗"
     echo "  ╚═╝░░╚═╝╚═╝░░╚═╝╚═╝╚═╝░░╚═╝"
     echo -e "${NC}"
-    echo -e "  ${BOLD}Pterodactyl Panel Theme Installer v2.0.0${NC}"
+    echo -e "  ${BOLD}Pterodactyl Panel Theme Installer v2.0.1${NC}"
     echo -e "  ${CYAN}${REPO}${NC}"
     echo ""
 }
