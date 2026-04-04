@@ -62,7 +62,20 @@
                         </div>
                     @endforeach
                 @endforeach
-                @yield('content')
+                @if(isset($sideEditor) && $sideEditor)
+                    <div class="sideEditor-container">
+                        <div class="iframe-container">
+                            <iframe src="{{ route('index') }}" id="preview-iframe"></iframe>
+                        </div>
+                        <div class="sideEditor">
+                            @yield('content')
+                        </div>
+                    </div>
+                @else
+                    <div style="padding: 20px;">
+                        @yield('content')
+                    </div>
+                @endif
             </div>
         </div>
 
