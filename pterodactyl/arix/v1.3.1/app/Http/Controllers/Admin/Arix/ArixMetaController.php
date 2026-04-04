@@ -16,22 +16,27 @@ class ArixMetaController extends Controller
         private SettingsRepositoryInterface $settings
     ) {}
 
+    private function get(string $key, mixed $default = null): mixed
+    {
+        try { return $this->settings->get('arix::' . $key) ?? $default; }
+        catch (\Exception $e) { return $default; }
+    }
+
     public function index(): View
     {
-        $arix = config('arix');
         return view('admin.arix.meta', [
-            'meta_color'       => $arix['meta_color'] ?? '#4a35cf',
-            'meta_title'       => $arix['meta_title'] ?? 'Pterodactyl',
-            'meta_description' => $arix['meta_description'] ?? '',
-            'meta_image'       => $arix['meta_image'] ?? '',
-            'meta_favicon'     => $arix['meta_favicon'] ?? '',
+            'meta_color'       => $this->get('meta_color', config('arix.meta_color', '#4a35cf')),
+            'meta_title'       => $this->get('meta_title', config('arix.meta_title', 'Pterodactyl')),
+            'meta_description' => $this->get('meta_description', config('arix.meta_description', '')),
+            'meta_image'       => $this->get('meta_image', config('arix.meta_image', '')),
+            'meta_favicon'     => $this->get('meta_favicon', config('arix.meta_favicon', '')),
         ]);
     }
 
     public function store(ArixMetaRequest $request): RedirectResponse
     {
         foreach ($request->normalize() as $key => $value) {
-            $this->settings->set(str_replace(':', '::', $key), $value);
+            $this->settings->set(str_replace('arix:', 'arix::', $key), $value);
         }
         $this->alert->success('Meta settings saved.')->flash();
         return redirect()->route('admin.arix.meta');

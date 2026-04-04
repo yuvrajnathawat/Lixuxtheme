@@ -16,22 +16,27 @@ class ArixLayoutController extends Controller
         private SettingsRepositoryInterface $settings
     ) {}
 
+    private function get(string $key, mixed $default = null): mixed
+    {
+        try { return $this->settings->get('arix::' . $key) ?? $default; }
+        catch (\Exception $e) { return $default; }
+    }
+
     public function index(): View
     {
-        $arix = config('arix');
         return view('admin.arix.layout', [
-            'layout'          => $arix['layout'] ?? 1,
-            'searchComponent' => $arix['searchComponent'] ?? 1,
-            'logoPosition'    => $arix['logoPosition'] ?? 1,
-            'socialPosition'  => $arix['socialPosition'] ?? 1,
-            'loginLayout'     => $arix['loginLayout'] ?? 1,
+            'layout'          => $this->get('layout', config('arix.layout', 1)),
+            'searchComponent' => $this->get('searchComponent', config('arix.searchComponent', 1)),
+            'logoPosition'    => $this->get('logoPosition', config('arix.logoPosition', 1)),
+            'socialPosition'  => $this->get('socialPosition', config('arix.socialPosition', 1)),
+            'loginLayout'     => $this->get('loginLayout', config('arix.loginLayout', 1)),
         ]);
     }
 
     public function store(ArixLayoutRequest $request): RedirectResponse
     {
         foreach ($request->normalize() as $key => $value) {
-            $this->settings->set(str_replace(':', '::', $key), $value);
+            $this->settings->set(str_replace('arix:', 'arix::', $key), $value);
         }
         $this->alert->success('Layout settings saved.')->flash();
         return redirect()->route('admin.arix.layout');
