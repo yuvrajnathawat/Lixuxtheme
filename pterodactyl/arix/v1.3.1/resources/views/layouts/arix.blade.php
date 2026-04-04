@@ -52,17 +52,10 @@
         </nav>
 
         <div class="wrapper">
+            @include('layouts.arix-sidebar')
             <div class="content-container">
-<div class="alert alert-warning">
-  <strong>Warning!</strong> I wandered around many parts of Arix just to make it Safe for everyone, but I saw that Arix is a virus and clear evidence of using AI. AI theme being sold for 49$? NOT WORTH IT! If you're considering switching to paid theme, consider choosing themes that are not made by Weijers.
-</div>
-<div class="alert alert-info">
-  <strong>INFO!</strong> I've polished Arix code to disable possible tracking and logging shit. Hence Editing theme is not possible here. You can edit Arix Configuration directly from <code>/var/www/pterodactyl/config/arix.php</code>.
-  After Configuring, run <code>php artisan config:clear</code>.
-</div>
-<br>
-<p>Picture of Pepijn <!--Niggers--></p>
-<img src="https://cdn.dribbble.com/users/8273380/avatars/normal/d9e29d633233aceaa52e795669651c35.jpg?1682710124" style="border: 2px solid red;" />
+                @include('common.alerts')
+                @yield('content')
             </div>
         </div>
 
