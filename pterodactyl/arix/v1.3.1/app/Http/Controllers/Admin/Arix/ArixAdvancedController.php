@@ -18,7 +18,14 @@ class ArixAdvancedController extends Controller
 
     public function index(): View
     {
-        return view('admin.arix.advanced', ['arix' => config('arix')]);
+        $arix = config('arix');
+        return view('admin.arix.advanced', [
+            'profileType'        => $arix['profileType'] ?? 'boring',
+            'modeToggler'        => $arix['modeToggler'] ?? false,
+            'langSwitch'         => $arix['langSwitch'] ?? false,
+            'ipFlag'             => $arix['ipFlag'] ?? false,
+            'lowResourcesAlert'  => $arix['lowResourcesAlert'] ?? false,
+        ]);
     }
 
     public function store(ArixAdvancedRequest $request): RedirectResponse

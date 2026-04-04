@@ -18,7 +18,14 @@ class ArixLayoutController extends Controller
 
     public function index(): View
     {
-        return view('admin.arix.layout', ['arix' => config('arix')]);
+        $arix = config('arix');
+        return view('admin.arix.layout', [
+            'layout'          => $arix['layout'] ?? 1,
+            'searchComponent' => $arix['searchComponent'] ?? 1,
+            'logoPosition'    => $arix['logoPosition'] ?? 1,
+            'socialPosition'  => $arix['socialPosition'] ?? 1,
+            'loginLayout'     => $arix['loginLayout'] ?? 1,
+        ]);
     }
 
     public function store(ArixLayoutRequest $request): RedirectResponse

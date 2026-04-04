@@ -18,7 +18,22 @@ class ArixStylingController extends Controller
 
     public function index(): View
     {
-        return view('admin.arix.styling', ['arix' => config('arix')]);
+        $arix = config('arix');
+        return view('admin.arix.styling', [
+            'backgroundImage'      => $arix['backgroundImage'] ?? '',
+            'backgroundImageLight' => $arix['backgroundImageLight'] ?? '',
+            'backdrop'             => $arix['backdrop'] ?? false,
+            'backdropPercentage'   => $arix['backdropPercentage'] ?? '100%',
+            'defaultMode'          => $arix['defaultMode'] ?? 'darkmode',
+            'copyright'            => $arix['copyright'] ?? '',
+            'radiusInput'          => $arix['radiusInput'] ?? '5px',
+            'borderInput'          => $arix['borderInput'] ?? false,
+            'radiusBox'            => $arix['radiusBox'] ?? '10px',
+            'flashMessage'         => $arix['flashMessage'] ?? 1,
+            'pageTitle'            => $arix['pageTitle'] ?? false,
+            'loginBackground'      => $arix['loginBackground'] ?? '',
+            'loginGradient'        => $arix['loginGradient'] ?? false,
+        ]);
     }
 
     public function store(ArixStylingRequest $request): RedirectResponse

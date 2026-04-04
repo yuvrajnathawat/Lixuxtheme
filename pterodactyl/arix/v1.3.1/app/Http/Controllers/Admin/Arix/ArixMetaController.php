@@ -18,7 +18,14 @@ class ArixMetaController extends Controller
 
     public function index(): View
     {
-        return view('admin.arix.meta', ['arix' => config('arix')]);
+        $arix = config('arix');
+        return view('admin.arix.meta', [
+            'meta_color'       => $arix['meta_color'] ?? '#4a35cf',
+            'meta_title'       => $arix['meta_title'] ?? 'Pterodactyl',
+            'meta_description' => $arix['meta_description'] ?? '',
+            'meta_image'       => $arix['meta_image'] ?? '',
+            'meta_favicon'     => $arix['meta_favicon'] ?? '',
+        ]);
     }
 
     public function store(ArixMetaRequest $request): RedirectResponse

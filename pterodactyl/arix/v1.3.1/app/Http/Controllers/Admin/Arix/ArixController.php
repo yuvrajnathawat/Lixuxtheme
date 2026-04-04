@@ -18,7 +18,16 @@ class ArixController extends Controller
 
     public function index(): View
     {
-        return view('admin.arix.index', ['arix' => config('arix')]);
+        $arix = config('arix');
+        return view('admin.arix.index', [
+            'logo'      => $arix['logo'] ?? '',
+            'fullLogo'  => $arix['fullLogo'] ?? false,
+            'logoHeight'=> $arix['logoHeight'] ?? '32px',
+            'discord'   => $arix['discord'] ?? '',
+            'support'   => $arix['support'] ?? '',
+            'status'    => $arix['status'] ?? '',
+            'billing'   => $arix['billing'] ?? '',
+        ]);
     }
 
     public function store(ArixRequest $request): RedirectResponse

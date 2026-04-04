@@ -18,7 +18,23 @@ class ArixMailController extends Controller
 
     public function index(): View
     {
-        return view('admin.arix.mail', ['arix' => config('arix')]);
+        $arix = config('arix');
+        return view('admin.arix.mail', [
+            'mail_color'           => $arix['mail_color'] ?? '#4a35cf',
+            'mail_backgroundColor' => $arix['mail_backgroundColor'] ?? '#F5F5FF',
+            'mail_logo'            => $arix['mail_logo'] ?? '',
+            'mail_logoFull'        => $arix['mail_logoFull'] ?? false,
+            'mail_mode'            => $arix['mail_mode'] ?? 'light',
+            'mail_discord'         => $arix['mail_discord'] ?? '',
+            'mail_twitter'         => $arix['mail_twitter'] ?? '',
+            'mail_facebook'        => $arix['mail_facebook'] ?? '',
+            'mail_instagram'       => $arix['mail_instagram'] ?? '',
+            'mail_linkedin'        => $arix['mail_linkedin'] ?? '',
+            'mail_youtube'         => $arix['mail_youtube'] ?? '',
+            'mail_status'          => $arix['mail_status'] ?? '',
+            'mail_billing'         => $arix['mail_billing'] ?? '',
+            'mail_support'         => $arix['mail_support'] ?? '',
+        ]);
     }
 
     public function store(ArixMailRequest $request): RedirectResponse

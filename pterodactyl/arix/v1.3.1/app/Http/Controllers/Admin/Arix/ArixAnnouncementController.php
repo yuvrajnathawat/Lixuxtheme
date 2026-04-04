@@ -18,7 +18,12 @@ class ArixAnnouncementController extends Controller
 
     public function index(): View
     {
-        return view('admin.arix.announcement', ['arix' => config('arix')]);
+        $arix = config('arix');
+        return view('admin.arix.announcement', [
+            'announcementType'      => $arix['announcementType'] ?? 'disabled',
+            'announcementMessage'   => $arix['announcementMessage'] ?? '',
+            'announcementCloseable' => $arix['announcementCloseable'] ?? false,
+        ]);
     }
 
     public function store(ArixAnnouncementRequest $request): RedirectResponse
