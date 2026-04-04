@@ -54,7 +54,14 @@
         <div class="wrapper">
             @include('layouts.arix-sidebar')
             <div class="content-container">
-                @include('common.alerts')
+                @foreach (Alert::getMessages() as $type => $messages)
+                    @foreach ($messages as $message)
+                        <div class="alert alert-{{ $type }} alert-dismissible" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            {!! $message !!}
+                        </div>
+                    @endforeach
+                @endforeach
                 @yield('content')
             </div>
         </div>
