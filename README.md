@@ -16,13 +16,13 @@ A custom theme for [Pterodactyl Panel](https://pterodactyl.io).
 Run this one-liner on your server as root:
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/yuvrajnathawat/pterodyctalpaneltheme/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/yuvrajnathawat/pterodyctalpaneltheme/master/install.sh)
 ```
 
 Or download and run manually:
 
 ```bash
-curl -O https://raw.githubusercontent.com/yuvrajnathawat/pterodyctalpaneltheme/main/install.sh
+curl -O https://raw.githubusercontent.com/yuvrajnathawat/pterodyctalpaneltheme/master/install.sh
 chmod +x install.sh
 sudo bash install.sh
 ```

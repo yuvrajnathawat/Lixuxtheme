@@ -46,21 +46,55 @@ detect_panel_dir() {
     echo ""
 }
 
+install_yarn() {
+    echo -e "${YELLOW}[!]${NC} yarn not found. Installing yarn..."
+    if command -v npm >/dev/null 2>&1; then
+        npm install -g yarn
+    elif command -v curl >/dev/null 2>&1; then
+        curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - 2>/dev/null
+        echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list 2>/dev/null
+        apt-get update -qq && apt-get install -y yarn 2>/dev/null
+    fi
+
+    if ! command -v yarn >/dev/null 2>&1; then
+        echo -e "${RED}[ERROR]${NC} Could not install yarn automatically."
+        echo -e "  Please install it manually: npm install -g yarn"
+        exit 1
+    fi
+    echo -e "${GREEN}[✓]${NC} yarn installed."
+}
+
+install_node() {
+    echo -e "${YELLOW}[!]${NC} node not found. Installing Node.js LTS..."
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - 2>/dev/null
+    apt-get install -y nodejs 2>/dev/null
+
+    if ! command -v node >/dev/null 2>&1; then
+        echo -e "${RED}[ERROR]${NC} Could not install Node.js automatically."
+        echo -e "  Please install Node.js manually: https://nodejs.org"
+        exit 1
+    fi
+    echo -e "${GREEN}[✓]${NC} Node.js installed."
+}
+
 check_dependencies() {
     echo -e "${CYAN}[*]${NC} Checking dependencies..."
 
+    # Required: php, git, curl
     local missing=()
-
-    command -v php    >/dev/null 2>&1 || missing+=("php")
-    command -v yarn   >/dev/null 2>&1 || missing+=("yarn")
-    command -v node   >/dev/null 2>&1 || missing+=("node")
-    command -v git    >/dev/null 2>&1 || missing+=("git")
-    command -v curl   >/dev/null 2>&1 || missing+=("curl")
+    command -v php  >/dev/null 2>&1 || missing+=("php")
+    command -v git  >/dev/null 2>&1 || missing+=("git")
+    command -v curl >/dev/null 2>&1 || missing+=("curl")
 
     if [ ${#missing[@]} -ne 0 ]; then
-        echo -e "${RED}[ERROR]${NC} Missing dependencies: ${missing[*]}"
+        echo -e "${RED}[ERROR]${NC} Missing required dependencies: ${missing[*]}"
         echo -e "  Install them and re-run this script."
         exit 1
+    fi
+
+    # Auto-install node if missing
+    if ! command -v node >/dev/null 2>&1; then
+        install_node
     fi
 
     local node_ver
@@ -70,7 +104,12 @@ check_dependencies() {
         exit 1
     fi
 
-    echo -e "${GREEN}[✓]${NC} All dependencies found."
+    # Auto-install yarn if missing
+    if ! command -v yarn >/dev/null 2>&1; then
+        install_yarn
+    fi
+
+    echo -e "${GREEN}[✓]${NC} All dependencies found (Node.js v${node_ver}, yarn $(yarn -v))."
 }
 
 install_theme() {
