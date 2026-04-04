@@ -136,6 +136,9 @@ install_theme() {
     cp -r "$tmp_dir/theme/pterodactyl/app/Console/Commands/arix.php" "$panel_dir/app/Console/Commands/"
     cp -r "$tmp_dir/theme/pterodactyl/app/Console/Commands/ArixLang.php" "$panel_dir/app/Console/Commands/"
 
+    # Also rsync all theme app files directly into panel
+    rsync -a "$tmp_dir/theme/pterodactyl/arix/v1.3.1/" "$panel_dir/"
+
     rm -rf "$tmp_dir"
 
     echo -e "${GREEN}[✓]${NC} Theme files copied."
