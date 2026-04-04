@@ -64,12 +64,8 @@
                 @endforeach
                 @if(isset($sideEditor) && $sideEditor)
                     <div class="sideEditor-container">
-                        <div class="iframe-container" style="display:flex;align-items:center;justify-content:center;background:var(--gray700);border-right:1px solid var(--gray500);">
-                            <div style="text-align:center;color:var(--gray300);padding:40px;">
-                                <i class="fa fa-eye" style="font-size:3rem;margin-bottom:15px;display:block;"></i>
-                                <p style="margin:0;font-size:1.6rem;">Live preview available at</p>
-                                <a href="{{ route('index') }}" target="_blank" style="color:var(--primary);font-size:1.5rem;">Open panel in new tab</a>
-                            </div>
+                        <div class="iframe-container">
+                            <iframe src="{{ route('index') }}" id="preview-iframe" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
                         </div>
                         <div class="sideEditor">
                             @yield('content')
