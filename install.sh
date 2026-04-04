@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-#   Pterodactyl Panel Theme - Installer
+#   Pterodactyl Panel Theme - Installer v1.0.2
 #   GitHub: https://github.com/yuvrajnathawat/pterodyctalpaneltheme
 # ============================================================
 
