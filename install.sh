@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-#   Pterodactyl Panel Theme - Installer v1.0.2
+#   Pterodactyl Panel Theme - Installer v2.0.0
 #   GitHub: https://github.com/yuvrajnathawat/pterodyctalpaneltheme
 # ============================================================
 
@@ -24,7 +24,7 @@ print_banner() {
     echo "  ██║░░██║██║░░██║██║██╔╝╚██╗"
     echo "  ╚═╝░░╚═╝╚═╝░░╚═╝╚═╝╚═╝░░╚═╝"
     echo -e "${NC}"
-    echo -e "  ${BOLD}Pterodactyl Panel Theme Installer${NC}"
+    echo -e "  ${BOLD}Pterodactyl Panel Theme Installer v2.0.0${NC}"
     echo -e "  ${CYAN}${REPO}${NC}"
     echo ""
 }
@@ -46,138 +46,222 @@ detect_panel_dir() {
     echo ""
 }
 
-install_yarn() {
-    echo -e "${YELLOW}[!]${NC} yarn not found. Installing yarn..."
-    if command -v npm >/dev/null 2>&1; then
-        npm install -g yarn
-    elif command -v curl >/dev/null 2>&1; then
-        curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - 2>/dev/null
-        echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list 2>/dev/null
-        apt-get update -qq && apt-get install -y yarn 2>/dev/null
-    fi
-
-    if ! command -v yarn >/dev/null 2>&1; then
-        echo -e "${RED}[ERROR]${NC} Could not install yarn automatically."
-        echo -e "  Please install it manually: npm install -g yarn"
+install_node22() {
+    echo -e "${CYAN}[*]${NC} Installing Node.js v22..."
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1
+    apt-get install -y nodejs >/dev/null 2>&1
+    if ! command -v node >/dev/null 2>&1; then
+        echo -e "${RED}[ERROR]${NC} Failed to install Node.js."
         exit 1
     fi
-    echo -e "${GREEN}[✓]${NC} yarn installed."
+    echo -e "${GREEN}[✓]${NC} Node.js $(node -v) installed."
 }
 
-install_node() {
-    echo -e "${YELLOW}[!]${NC} node not found. Installing Node.js LTS..."
-    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - 2>/dev/null
-    apt-get install -y nodejs 2>/dev/null
-
-    if ! command -v node >/dev/null 2>&1; then
-        echo -e "${RED}[ERROR]${NC} Could not install Node.js automatically."
-        echo -e "  Please install Node.js manually: https://nodejs.org"
+install_yarn() {
+    echo -e "${CYAN}[*]${NC} Installing yarn..."
+    npm install -g yarn >/dev/null 2>&1
+    if ! command -v yarn >/dev/null 2>&1; then
+        echo -e "${RED}[ERROR]${NC} Failed to install yarn."
         exit 1
     fi
-    echo -e "${GREEN}[✓]${NC} Node.js installed."
+    echo -e "${GREEN}[✓]${NC} yarn $(yarn -v) installed."
 }
 
 check_dependencies() {
     echo -e "${CYAN}[*]${NC} Checking dependencies..."
 
-    # Required: php, git, curl
     local missing=()
     command -v php  >/dev/null 2>&1 || missing+=("php")
     command -v git  >/dev/null 2>&1 || missing+=("git")
     command -v curl >/dev/null 2>&1 || missing+=("curl")
+    command -v rsync >/dev/null 2>&1 || missing+=("rsync")
 
     if [ ${#missing[@]} -ne 0 ]; then
-        echo -e "${RED}[ERROR]${NC} Missing required dependencies: ${missing[*]}"
-        echo -e "  Install them and re-run this script."
-        exit 1
+        echo -e "${YELLOW}[!]${NC} Installing missing: ${missing[*]}"
+        apt-get install -y "${missing[@]}" >/dev/null 2>&1
     fi
 
-    # Auto-install node if missing
+    # Node.js v22 required
     if ! command -v node >/dev/null 2>&1; then
-        install_node
+        install_node22
+    else
+        local node_ver
+        node_ver=$(node -v | sed 's/v//' | cut -d. -f1)
+        if [ "$node_ver" -lt 22 ]; then
+            echo -e "${YELLOW}[!]${NC} Node.js v${node_ver} found, upgrading to v22..."
+            install_node22
+        else
+            echo -e "${GREEN}[✓]${NC} Node.js $(node -v) found."
+        fi
     fi
 
-    local node_ver
-    node_ver=$(node -v | sed 's/v//' | cut -d. -f1)
-    if [ "$node_ver" -lt 14 ]; then
-        echo -e "${RED}[ERROR]${NC} Node.js v${node_ver} is too old. Minimum required: v14"
-        exit 1
-    fi
-
-    # Auto-install yarn if missing
     if ! command -v yarn >/dev/null 2>&1; then
         install_yarn
+    else
+        echo -e "${GREEN}[✓]${NC} yarn $(yarn -v) found."
+    fi
+}
+
+fix_nginx_iframe() {
+    local panel_dir="$1"
+    echo -e "${CYAN}[*]${NC} Fixing X-Frame-Options for admin preview..."
+
+    # Try to find and fix nginx config
+    for conf in /etc/nginx/sites-available/pterodactyl.conf /etc/nginx/sites-available/default /etc/nginx/conf.d/pterodactyl.conf; do
+        if [ -f "$conf" ]; then
+            if grep -q "X-Frame-Options" "$conf"; then
+                sed -i 's/add_header X-Frame-Options.*/add_header X-Frame-Options "SAMEORIGIN";/' "$conf"
+                echo -e "${GREEN}[✓]${NC} Fixed X-Frame-Options in $conf"
+            else
+                # Add it if not present in server block
+                sed -i '/server_name/a\    add_header X-Frame-Options "SAMEORIGIN";' "$conf"
+            fi
+            nginx -t >/dev/null 2>&1 && systemctl reload nginx >/dev/null 2>&1
+            break
+        fi
+    done
+
+    # Also fix via Laravel middleware if exists
+    local middleware="$panel_dir/app/Http/Middleware/SetSecurityHeaders.php"
+    if [ -f "$middleware" ]; then
+        sed -i "s/'X-Frame-Options'.*=>.*'DENY'/'X-Frame-Options' => 'SAMEORIGIN'/" "$middleware"
+        sed -i "s/X-Frame-Options.*DENY/X-Frame-Options: SAMEORIGIN/" "$middleware"
+    fi
+}
+
+copy_theme_files() {
+    local panel_dir="$1"
+    local tmp_dir="$2"
+    local is_update="${3:-false}"
+
+    echo -e "${CYAN}[*]${NC} Copying theme files..."
+
+    # Copy artisan commands
+    cp "$tmp_dir/theme/pterodactyl/app/Console/Commands/arix.php" "$panel_dir/app/Console/Commands/"
+    cp "$tmp_dir/theme/pterodactyl/app/Console/Commands/ArixLang.php" "$panel_dir/app/Console/Commands/"
+
+    # Copy arix version folder to panel root (this copies app/, config/, resources/, etc.)
+    if [ "$is_update" = "true" ]; then
+        rsync -a \
+            --exclude='routes.ts' \
+            --exclude='getServer.ts' \
+            --exclude='admin.blade.php' \
+            --exclude='admin.php' \
+            --exclude='ServerTransformer.php' \
+            "$tmp_dir/theme/pterodactyl/arix/$THEME_VERSION/" "$panel_dir/"
+    else
+        rsync -a "$tmp_dir/theme/pterodactyl/arix/$THEME_VERSION/" "$panel_dir/"
     fi
 
-    echo -e "${GREEN}[✓]${NC} All dependencies found (Node.js v${node_ver}, yarn $(yarn -v))."
+    # Also keep the arix/ folder for artisan commands
+    rsync -a "$tmp_dir/theme/pterodactyl/arix/" "$panel_dir/arix/"
+
+    echo -e "${GREEN}[✓]${NC} Theme files copied."
+}
+
+build_assets() {
+    local panel_dir="$1"
+    cd "$panel_dir" || exit 1
+
+    echo -e "${CYAN}[*]${NC} Installing required npm packages..."
+    yarn add react-icons@5.4.0 md5 @types/md5 bbcode-to-react @types/bbcode-to-react \
+        i18next-browser-languagedetector@7.2.1 path-browserify cross-env 2>&1 | tail -3
+
+    # Fix webpack path polyfill if needed
+    if grep -q "resolve:" webpack.config.js 2>/dev/null; then
+        if ! grep -q "path-browserify" webpack.config.js; then
+            sed -i "s/resolve: {/resolve: {\n        fallback: { \"path\": require.resolve(\"path-browserify\") },/" webpack.config.js
+            echo -e "${GREEN}[✓]${NC} Added path-browserify polyfill to webpack config."
+        fi
+    fi
+
+    echo -e "${CYAN}[*]${NC} Building panel assets (this takes a few minutes)..."
+    yarn build:production
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR]${NC} Build failed. Check errors above."
+        exit 1
+    fi
+    echo -e "${GREEN}[✓]${NC} Assets built successfully."
+}
+
+set_permissions() {
+    local panel_dir="$1"
+    echo -e "${CYAN}[*]${NC} Setting permissions..."
+    for user in www-data nginx apache; do
+        if id "$user" &>/dev/null; then
+            chown -R "$user":"$user" "$panel_dir"
+            echo -e "${GREEN}[✓]${NC} Permissions set for: $user"
+            break
+        fi
+    done
 }
 
 install_theme() {
     local panel_dir="$1"
-
-    echo ""
-    echo -e "${CYAN}[*]${NC} Downloading theme ${THEME_VERSION} from GitHub..."
-    cd "$panel_dir" || exit 1
-
-    # Clone or download the theme files
-    local tmp_dir
-    tmp_dir=$(mktemp -d)
-
-    git clone --depth=1 "$REPO" "$tmp_dir/theme" 2>&1
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}[ERROR]${NC} Failed to clone repository. Check your internet connection."
-        rm -rf "$tmp_dir"
-        exit 1
-    fi
-
-    # Copy the arix folder into the panel directory
-    echo -e "${CYAN}[*]${NC} Copying theme files..."
-    cp -r "$tmp_dir/theme/pterodactyl/arix" "$panel_dir/"
-    cp -r "$tmp_dir/theme/pterodactyl/app/Console/Commands/arix.php" "$panel_dir/app/Console/Commands/"
-    cp -r "$tmp_dir/theme/pterodactyl/app/Console/Commands/ArixLang.php" "$panel_dir/app/Console/Commands/"
-
-    # Also rsync all theme app files directly into panel
-    rsync -a "$tmp_dir/theme/pterodactyl/arix/v1.3.1/" "$panel_dir/"
-
-    rm -rf "$tmp_dir"
-
-    echo -e "${GREEN}[✓]${NC} Theme files copied."
-
-    # Run the artisan install command
-    echo ""
-    echo -e "${CYAN}[*]${NC} Running theme installer..."
-    php artisan arix install
-}
-
-update_theme() {
-    local panel_dir="$1"
-
-    echo ""
-    echo -e "${CYAN}[*]${NC} Downloading latest theme from GitHub..."
     cd "$panel_dir" || exit 1
 
     local tmp_dir
     tmp_dir=$(mktemp -d)
 
-    git clone --depth=1 "$REPO" "$tmp_dir/theme" 2>&1
+    echo -e "${CYAN}[*]${NC} Downloading theme from GitHub..."
+    git clone --depth=1 "$REPO" "$tmp_dir/theme" 2>&1 | tail -3
     if [ $? -ne 0 ]; then
         echo -e "${RED}[ERROR]${NC} Failed to clone repository."
         rm -rf "$tmp_dir"
         exit 1
     fi
 
-    echo -e "${CYAN}[*]${NC} Copying updated theme files..."
-    cp -r "$tmp_dir/theme/pterodactyl/arix" "$panel_dir/"
-    cp -r "$tmp_dir/theme/pterodactyl/app/Console/Commands/arix.php" "$panel_dir/app/Console/Commands/"
-    cp -r "$tmp_dir/theme/pterodactyl/app/Console/Commands/ArixLang.php" "$panel_dir/app/Console/Commands/"
-
+    copy_theme_files "$panel_dir" "$tmp_dir" "false"
     rm -rf "$tmp_dir"
 
-    echo -e "${GREEN}[✓]${NC} Theme files updated."
+    echo -e "${CYAN}[*]${NC} Running database migrations..."
+    php artisan migrate --force
+
+    build_assets "$panel_dir"
+    fix_nginx_iframe "$panel_dir"
+    set_permissions "$panel_dir"
+
+    echo -e "${CYAN}[*]${NC} Optimizing..."
+    php artisan optimize:clear
+    php artisan optimize
+    php artisan language:compile
 
     echo ""
-    echo -e "${CYAN}[*]${NC} Running theme updater..."
-    php artisan arix update
+    echo -e "${GREEN}╔══════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║   ✨  Theme installed successfully!  ║${NC}"
+    echo -e "${GREEN}╚══════════════════════════════════════╝${NC}"
+    echo ""
+    echo -e "  Access theme editor: ${CYAN}your-panel/admin/arix${NC}"
+}
+
+update_theme() {
+    local panel_dir="$1"
+    cd "$panel_dir" || exit 1
+
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
+
+    echo -e "${CYAN}[*]${NC} Downloading latest theme from GitHub..."
+    git clone --depth=1 "$REPO" "$tmp_dir/theme" 2>&1 | tail -3
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}[ERROR]${NC} Failed to clone repository."
+        rm -rf "$tmp_dir"
+        exit 1
+    fi
+
+    copy_theme_files "$panel_dir" "$tmp_dir" "true"
+    rm -rf "$tmp_dir"
+
+    build_assets "$panel_dir"
+    fix_nginx_iframe "$panel_dir"
+    set_permissions "$panel_dir"
+
+    php artisan optimize:clear
+    php artisan optimize
+    php artisan language:compile
+
+    echo ""
+    echo -e "${GREEN}[✓] Theme updated successfully!${NC}"
 }
 
 uninstall_theme() {
@@ -191,51 +275,18 @@ uninstall_theme() {
         exit 0
     fi
 
-    php artisan arix uninstall
-}
+    php artisan down
+    curl -sL https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz | tar -xzv >/dev/null 2>&1
+    chmod -R 755 storage/* bootstrap/cache
+    composer install --no-dev --optimize-autoloader -q
+    php artisan view:clear
+    php artisan config:clear
+    php artisan migrate --seed --force
+    set_permissions "$panel_dir"
+    php artisan queue:restart
+    php artisan up
 
-manual_install() {
-    local panel_dir="$1"
-    cd "$panel_dir" || exit 1
-
-    echo ""
-    echo -e "${CYAN}[*]${NC} Running manual step-by-step installation..."
-
-    # Step 1: Migrate DB
-    echo -e "${CYAN}[1/5]${NC} Running database migrations..."
-    php artisan migrate --force
-
-    # Step 2: Install npm packages
-    echo -e "${CYAN}[2/5]${NC} Installing npm packages..."
-    yarn add @types/md5 md5 react-icons@5.4.0 @types/bbcode-to-react bbcode-to-react i18next-browser-languagedetector@7.2.1
-
-    # Step 3: Build assets
-    echo -e "${CYAN}[3/5]${NC} Building panel assets..."
-    node_ver=$(node -v | sed 's/v//' | cut -d. -f1)
-    if [ "$node_ver" -ge 17 ]; then
-        NODE_OPTIONS=--openssl-legacy-provider yarn build:production
-    else
-        yarn build:production
-    fi
-
-    # Step 4: Set permissions
-    echo -e "${CYAN}[4/5]${NC} Setting permissions..."
-    for user in www-data nginx apache; do
-        if id "$user" &>/dev/null; then
-            chown -R "$user":"$user" "$panel_dir"/*
-            echo -e "${GREEN}[✓]${NC} Permissions set for: $user"
-            break
-        fi
-    done
-
-    # Step 5: Optimize
-    echo -e "${CYAN}[5/5]${NC} Optimizing..."
-    php artisan optimize:clear
-    php artisan optimize
-    php artisan language:compile
-
-    echo ""
-    echo -e "${GREEN}[✓] Manual installation complete!${NC}"
+    echo -e "${GREEN}[✓] Theme uninstalled. Panel restored to vanilla.${NC}"
 }
 
 # ─── Main Menu ───────────────────────────────────────────────
@@ -244,35 +295,31 @@ print_banner
 check_root
 check_dependencies
 
-# Detect panel directory
 PANEL_DIR=$(detect_panel_dir)
 
 if [ -z "$PANEL_DIR" ]; then
-    echo -e "${YELLOW}[!]${NC} Could not auto-detect Pterodactyl panel directory."
-    read -rp "Enter the full path to your panel (e.g. /var/www/pterodactyl): " PANEL_DIR
+    echo -e "${YELLOW}[!]${NC} Could not auto-detect panel directory."
+    read -rp "Enter full path to your panel (e.g. /var/www/pterodactyl): " PANEL_DIR
     if [ ! -f "${PANEL_DIR}/artisan" ]; then
-        echo -e "${RED}[ERROR]${NC} No artisan file found at ${PANEL_DIR}. Is this the correct path?"
+        echo -e "${RED}[ERROR]${NC} No artisan file found at ${PANEL_DIR}."
         exit 1
     fi
 fi
 
 echo -e "${GREEN}[✓]${NC} Panel directory: ${BOLD}${PANEL_DIR}${NC}"
 echo ""
-
 echo -e "${BOLD}What would you like to do?${NC}"
 echo "  1) Install theme"
 echo "  2) Update theme"
 echo "  3) Uninstall theme (restore vanilla panel)"
-echo "  4) Manual install (run steps individually)"
-echo "  5) Exit"
+echo "  4) Exit"
 echo ""
-read -rp "Select an option [1-5]: " choice
+read -rp "Select an option [1-4]: " choice
 
 case "$choice" in
     1) install_theme "$PANEL_DIR" ;;
     2) update_theme "$PANEL_DIR" ;;
     3) uninstall_theme "$PANEL_DIR" ;;
-    4) manual_install "$PANEL_DIR" ;;
-    5) echo "Bye!"; exit 0 ;;
+    4) echo "Bye!"; exit 0 ;;
     *) echo -e "${RED}Invalid option.${NC}"; exit 1 ;;
 esac
