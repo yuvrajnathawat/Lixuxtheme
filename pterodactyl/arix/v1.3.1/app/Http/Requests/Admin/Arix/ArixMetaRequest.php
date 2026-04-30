@@ -21,4 +21,9 @@ class ArixMetaRequest extends AdminFormRequest
             'arix:meta_favicon' => 'required|string|url',
         ];
     }
+
+    public function normalize(): array
+    {
+        return $this->only(array_keys($this->rules()));
+    }
 }

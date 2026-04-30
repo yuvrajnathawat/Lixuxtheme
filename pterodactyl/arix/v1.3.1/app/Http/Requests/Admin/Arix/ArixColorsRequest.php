@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace Pterodactyl\Http\Requests\Admin\Arix;
 
@@ -65,5 +65,10 @@ class ArixColorsRequest extends AdminFormRequest
             'arix:lightmode_gray800' => ['required', 'string', 'regex:/^#([a-f0-9]{6}|[a-f0-9]{3})$/i'],
             'arix:lightmode_gray900' => ['required', 'string', 'regex:/^#([a-f0-9]{6}|[a-f0-9]{3})$/i'],
         ];
+    }
+
+    public function normalize(): array
+    {
+        return $this->only(array_keys($this->rules()));
     }
 }

@@ -19,4 +19,9 @@ class ArixAnnouncementRequest extends AdminFormRequest
             'arix:announcementCloseable' => 'required|in:true,false',
         ];
     }
+
+    public function normalize(): array
+    {
+        return $this->only(array_keys($this->rules()));
+    }
 }

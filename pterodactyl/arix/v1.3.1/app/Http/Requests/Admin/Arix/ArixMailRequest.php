@@ -32,4 +32,9 @@ class ArixMailRequest extends AdminFormRequest
             'arix:mail_support' => 'nullable|string|url',
         ];
     }
+
+    public function normalize(): array
+    {
+        return $this->only(array_keys($this->rules()));
+    }
 }

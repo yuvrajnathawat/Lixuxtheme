@@ -14,7 +14,7 @@ class ArixRequest extends AdminFormRequest
     public function rules(): array
     {
         return [
-            'arix:logo' => 'required|string|url',
+            'arix:logo' => 'required|string',
             'arix:fullLogo' => 'required|in:true,false',
             'arix:logoHeight' => 'required|string',
             'arix:discord' => 'nullable|numeric',
@@ -22,5 +22,13 @@ class ArixRequest extends AdminFormRequest
             'arix:status' => 'nullable|string|url',
             'arix:billing' => 'nullable|string|url',
         ];
+    }
+
+    /**
+     * Return only the validated fields defined in rules().
+     */
+    public function normalize(): array
+    {
+        return $this->only(array_keys($this->rules()));
     }
 }

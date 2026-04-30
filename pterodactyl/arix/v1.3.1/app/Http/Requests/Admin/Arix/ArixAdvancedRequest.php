@@ -21,4 +21,9 @@ class ArixAdvancedRequest extends AdminFormRequest
             'arix:lowResourcesAlert' => 'required|in:true,false',
         ];
     }
+
+    public function normalize(): array
+    {
+        return $this->only(array_keys($this->rules()));
+    }
 }

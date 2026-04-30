@@ -31,4 +31,9 @@ class ArixComponentsRequest extends AdminFormRequest
             'arix:slot7' => 'required|string',
         ];
     }
+
+    public function normalize(): array
+    {
+        return $this->only(array_keys($this->rules()));
+    }
 }

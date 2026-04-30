@@ -22,4 +22,9 @@ class ArixLayoutRequest extends AdminFormRequest
             'arix:loginLayout' => 'required|numeric',
         ];
     }
+
+    public function normalize(): array
+    {
+        return $this->only(array_keys($this->rules()));
+    }
 }
