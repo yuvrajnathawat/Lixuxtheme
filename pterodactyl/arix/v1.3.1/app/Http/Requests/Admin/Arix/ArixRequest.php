@@ -14,13 +14,13 @@ class ArixRequest extends AdminFormRequest
     public function rules(): array
     {
         return [
-            'arix:logo' => 'required|string',
+            'arix:logo' => 'nullable|string',
             'arix:fullLogo' => 'required|in:true,false',
             'arix:logoHeight' => 'required|string',
-            'arix:discord' => 'nullable|numeric',
-            'arix:support' => 'nullable|string|url',
-            'arix:status' => 'nullable|string|url',
-            'arix:billing' => 'nullable|string|url',
+            'arix:discord' => 'nullable|string',
+            'arix:support' => 'nullable|string',
+            'arix:status' => 'nullable|string',
+            'arix:billing' => 'nullable|string',
         ];
     }
 
