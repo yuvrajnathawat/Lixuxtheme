@@ -2,7 +2,7 @@
 
 # ============================================================
 #   Pterodactyl Panel Theme - Installer v2.0.1
-#   GitHub: https://github.com/yuvrajnathawat/pterodyctalpaneltheme
+#   GitHub: https://github.com/yuvrajnathawat/Lixuxtheme
 # ============================================================
 
 RED='\033[0;31m'
@@ -12,7 +12,7 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-REPO="https://github.com/yuvrajnathawat/pterodyctalpaneltheme"
+REPO="https://github.com/yuvrajnathawat/Lixuxtheme"
 THEME_VERSION="v1.3.1"
 
 print_banner() {
